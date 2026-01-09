@@ -13,7 +13,7 @@ import random
 import time
 from datetime import datetime
 
-# --- Configuration Constants (Updated for New Structure) ---
+# --- Configuration Constants ---
 MODEL_PATH = "models/ecoear_model.pth"
 BANNER_PATH = "assets/forest.jpg" 
 SAMPLE_RATE = 22050
@@ -46,6 +46,7 @@ st.markdown("""
         --bg-color: #F2F6F5;
         --card-bg: #FFFFFF;
         --accent-red: #C62828;
+        --accent-green: #2E7D32;
     }
     
     html, body, [class*="css"] {
@@ -118,6 +119,24 @@ st.markdown("""
     div[data-testid="stMetricLabel"] {
         font-size: 1rem !important;
         color: #888 !important;
+    }
+
+    /* Custom Alert Boxes (Replacing st.error/success to avoid icons) */
+    .custom-alert-danger {
+        background-color: #FFEBEE;
+        color: #C62828;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #EF9A9A;
+        font-weight: 500;
+    }
+    .custom-alert-success {
+        background-color: #E8F5E9;
+        color: #2E7D32;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #A5D6A7;
+        font-weight: 500;
     }
 
     /* UI Elements */
@@ -208,7 +227,7 @@ def process_audio(file_path):
         input_tensor = input_tensor.unsqueeze(0).expand(-1, 3, -1, -1)
         return y, spec_db.cpu().numpy()[0], input_tensor
     except Exception as e:
-        st.error(f"Processing Error: {e}")
+        st.markdown(f"<div class='custom-alert-danger'>Processing Error: {e}</div>", unsafe_allow_html=True)
         return None, None, None
 
 # --- Mock Data Generation for Map ---
@@ -277,7 +296,7 @@ if os.path.exists(BANNER_PATH):
             unsafe_allow_html=True
         )
     except Exception as e:
-        st.error(f"Image Error: {e}")
+        st.markdown(f"<div class='custom-alert-danger'>Image Error: {e}</div>", unsafe_allow_html=True)
 
 # 3. Global Metrics Dashboard
 with st.container(border=True):
@@ -377,9 +396,19 @@ if selected_file:
                 st.pyplot(fig)
                 
                 if is_danger:
-                     st.error("Anomaly Pattern: High-frequency mechanical signature matching 'Chainsaw' class.")
+                     st.markdown("""
+                        <div class="custom-alert-danger">
+                            <strong>System Alert:</strong> Anomaly Pattern Detected.<br>
+                            High-frequency mechanical signature matching 'Chainsaw' class.
+                        </div>
+                     """, unsafe_allow_html=True)
                 else:
-                     st.success("Pattern: Biophony (Bird/Wind) signature within normal range.")
+                     st.markdown("""
+                        <div class="custom-alert-success">
+                            <strong>Status Normal:</strong> Biophony Pattern.<br>
+                            Signal signature (Bird/Wind) is within acceptable parameters.
+                        </div>
+                     """, unsafe_allow_html=True)
 
         # Geospatial Map Simulation
         st.markdown("<br>", unsafe_allow_html=True)
