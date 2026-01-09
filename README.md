@@ -9,7 +9,7 @@
 
 # EcoEar: Distributed Acoustic Monitoring System for Forest Conservation
 
-### ** Live Demo :** [https://ecoear-demo.streamlit.app/](https://ecoear-demo.streamlit.app/) [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://ecoear-demo.streamlit.app/)
+### **Live Demo :** [https://ecoear-demo.streamlit.app/](https://ecoear-demo.streamlit.app/) [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://ecoear-demo.streamlit.app/)
 
 ![System Banner](assets/forest.jpg)
 
@@ -113,7 +113,7 @@ streamlit run src/app.py
 
 # EcoEar: 分布式森林声学生态监测系统
 
-### ** 在线演示 :** [https://ecoear-demo.streamlit.app/](https://ecoear-demo.streamlit.app/) [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://ecoear-demo.streamlit.app/)
+### **在线演示 :** [https://ecoear-demo.streamlit.app/](https://ecoear-demo.streamlit.app/) [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://ecoear-demo.streamlit.app/)
 
 ![System Banner](assets/forest.jpg)
 
