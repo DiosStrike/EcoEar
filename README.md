@@ -55,7 +55,7 @@ ECOEAR/
 ## Setup and Reproduction
 This project is designed for full reproducibility. Follow the sequence below to initialize the environment and execute the pipeline.
 
-1. Environment Initialization
+## **1. Environment Initialization**
 Ensure Python 3.8+ is installed. It is recommended to use a virtual environment.
 ```Bash
 git clone [https://github.com/YOUR_USERNAME/EcoEar.git](https://github.com/YOUR_USERNAME/EcoEar.git)
@@ -63,25 +63,25 @@ cd EcoEar
 pip install -r requirements.txt
 ```
 
-2. Data Ingestion (ETL)
+## **2. Data Ingestion (ETL)**
 Execute the data loader to pull the raw dataset and organize it into the training structure. This script handles network retries and file verification.
 ```Bash
 python src/data_loader.py
 ```
 
-3. Model Training
+## **3. Model Training**
 Initiate the training loop. The script uses Weighted Random Sampling to address class imbalance and saves the optimal model weights to the models/ directory based on validation accuracy.
 ```Bash
 python src/train.py
 ```
 
-4. Simulation & QA
-Before deployment, run the simulation script to verify model inference logic and evaluate performance metrics on a randomized stream.
-```Bash
+## **4. Simulation & QA (A/B Testing)**
+Execute the headless simulation engine to perform **Sensitivity Analysis**. The script runs a comparative A/B test between "Aggressive" (Threshold 0.6) and "Conservative" (Threshold 0.85) strategies, generating a detailed report on False Positive/Negative Rates (FPR/FNR).
+```bash
 python src/simulation.py
 ```
 
-5. Deployment
+## **5. Deployment**
 Launch the interactive command center. This will start a local server and open the dashboard in your default web browser.
 ```Bash
 streamlit run src/app.py
@@ -89,15 +89,17 @@ streamlit run src/app.py
 ---
 
 ## Technical Specifications
-- Input Data: Raw WAV audio sampled at 22,050 Hz.
+- **Input Data**: Raw WAV audio sampled at 22,050 Hz.
 
-- Feature Engineering: Log-Mel Spectrograms (128 Mel bands, FFT window=2048, Hop length=512).
+- **Feature Engineering**: Log-Mel Spectrograms (128 Mel bands, FFT window=2048, Hop length=512).
 
-- Model Backbone: ResNet-18 (Pretrained on ImageNet), fine-tuned with a modified input layer for 3-channel spectral compositing.
+- **Model Backbone**: ResNet-18 (Pretrained on ImageNet), fine-tuned with a modified input layer for 3-channel spectral compositing.
 
-- Inference Latency: Optimized for <30ms per sample on MPS (Metal Performance Shaders) or CUDA enabled devices.
+- **Inference Latency**: Optimized for <30ms per sample on MPS (Metal Performance Shaders) or CUDA enabled devices.
 
-- Telemetry Simulation: Mocks a network of 50 distributed IoT nodes with realistic heartbeat logs and network latency metrics.
+- **Telemetry Simulation**: Mocks a network of 50 distributed IoT nodes with realistic heartbeat logs and network latency metrics.
+
+- **Strategy Evaluation**: Dual-stream A/B testing framework to quantify the trade-off between Recall (Security) and Precision (False Alarm Rate) across randomized stochastic data streams.
 
 ---
 
@@ -155,7 +157,8 @@ ECOEAR/
 ## 设置与复现 
 本项目旨在实现完全的可复现性。请按照以下顺序初始化环境并执行管道。
 
-1. 环境初始化
+## **1. 环境初始化**
+
 确保已安装 Python 3.8+。建议使用虚拟环境。
 ```Bash
 git clone [https://github.com/YOUR_USERNAME/EcoEar.git](https://github.com/YOUR_USERNAME/EcoEar.git)
@@ -163,36 +166,46 @@ cd EcoEar
 pip install -r requirements.txt
 ```
 
-2. 数据摄取 (ETL)
+## **2. 数据摄取 (ETL)**
+
 执行数据加载器以拉取原始数据集并将其组织为训练结构。该脚本包含网络重试机制和文件校验。
 ```Bash
 python src/data_loader.py
 ```
 
-3. 模型训练
+## **3. 模型训练**
+
 启动训练循环。该脚本使用加权随机采样 (Weighted Random Sampling) 来解决类别不平衡问题，并根据验证准确率将最优模型权重保存到 models/ 目录。
 ```Bash
 python src/train.py
 ```
 
-4. 仿真与 QA
-在部署之前，运行仿真脚本以验证模型推理逻辑，并评估随机数据流上的性能指标。
+## **4. 仿真与 QA (A/B 测试)**
+
+执行无头仿真引擎进行 敏感性分析 (Sensitivity Analysis)。该脚本在“激进型”（阈值 0.6）和“保守型”（阈值 0.85）策略之间运行对比 A/B 测试，生成关于误报率/漏报率 (FPR/FNR) 的详细报告。
 ```Bash
 python src/simulation.py
 ```
 
 5. 部署
+
 启动交互式指挥中心。这将启动一个本地服务器并在默认浏览器中打开仪表盘。
 ```Bash
 streamlit run src/app.py
 ```
 
 ## 技术规格
-- 输入数据: 采样率为 22,050 Hz 的原始 WAV 音频。
-- 特征工程: 对数梅尔频谱图 (Log-Mel Spectrograms, 128 Mel bands, FFT window=2048, Hop length=512)。
-- 模型骨干: ResNet-18 (ImageNet 预训练)，微调修改后的输入层以适应 3 通道频谱合成。
-- 推理延迟: 针对 MPS (Metal Performance Shaders) 或 CUDA 设备进行了优化，单样本处理 <30ms。
-- 遥测仿真: 模拟包含 50 个分布式 IoT 节点的网络，具有逼真的心跳日志和网络延迟指标。
+- **输入数据**: 采样率为 22,050 Hz 的原始 WAV 音频。
+
+- **特征工程**: 对数梅尔频谱图 (Log-Mel Spectrograms, 128 Mel bands, FFT window=2048, Hop length=512)。
+
+- **模型骨干**: ResNet-18 (ImageNet 预训练)，微调修改后的输入层以适应 3 通道频谱合成。
+
+- **推理延迟**: 针对 MPS (Metal Performance Shaders) 或 CUDA 设备进行了优化，单样本处理 <30ms。
+
+- **遥测仿真**: 模拟包含 50 个分布式 IoT 节点的网络，具有逼真的心跳日志和网络延迟指标。
+
+- **策略评估**: 双流 A/B 测试框架，用于量化随机数据流中召回率（安全性）与精确率（误报率）之间的权衡。
 
 ---
 

@@ -1,173 +1,95 @@
-import torch
-import torch.nn as nn
-import torchaudio.transforms as T
-import torchvision.models as models
-import librosa
-import numpy as np
-import os
-import random
 import time
-from collections import deque
+import random
+import numpy as np
+import pandas as pd
+from datetime import datetime
+import sys
 
-# --- Simulation Configuration ---
-MODEL_PATH = "models/ecoear_model.pth"
-DATA_DIR = "data"
-SAMPLE_RATE = 22050
-DURATION = 2
-N_MELS = 128
-SIMULATION_STEPS = 100 
-DELAY = 0.1             
+# --- Configuration ---
+NUM_SAMPLES = 1000
+# Strategy A (Aggressive): Low threshold, catches more threats but more false alarms
+THRESHOLD_A = 0.60 
+# Strategy B (Conservative): High threshold, misses subtle threats but very stable
+THRESHOLD_B = 0.85 
 
-THRESHOLD_A = 0.60  
-THRESHOLD_B = 0.95  
-
-device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
-
-# --- 1. Model Architecture Initialization ---
-def load_model():
-    print(f"Loading inference model from {MODEL_PATH}...")
-    model = models.resnet18(weights=None) 
-    num_ftrs = model.fc.in_features
-    model.fc = nn.Sequential(
-        nn.Linear(num_ftrs, 128),
-        nn.ReLU(),
-        nn.Dropout(0.5),
-        nn.Linear(128, 1)
-    )
-    
-    state_dict = torch.load(MODEL_PATH, map_location=device)
-    model.load_state_dict(state_dict)
-    model.to(device)
-    model.eval() 
-    return model
-
-# --- 2. Audio Processing Pipeline ---
-class AudioPreprocessor:
+class SimulationEngine:
     def __init__(self):
-        self.mel_spectrogram = T.MelSpectrogram(
-            sample_rate=SAMPLE_RATE,
-            n_mels=N_MELS,
-            n_fft=2048, 
-            hop_length=512
-        ).to(device)
-        self.amplitude_to_db = T.AmplitudeToDB().to(device)
+        self.results_a = {"TP": 0, "FP": 0, "TN": 0, "FN": 0}
+        self.results_b = {"TP": 0, "FP": 0, "TN": 0, "FN": 0}
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] 🚀 Initializing Headless Simulation Engine...")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] ⚙️  Strategy A (Aggressive) Threshold: {THRESHOLD_A}")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] ⚙️  Strategy B (Conservative) Threshold: {THRESHOLD_B}")
+        print("-" * 60)
 
-    def process(self, file_path):
-        try:
-            waveform, _ = librosa.load(file_path, sr=SAMPLE_RATE)
-            waveform = torch.from_numpy(waveform).unsqueeze(0).to(device) 
+    def generate_mock_inference(self):
+        """
+        Simulates the model output and ground truth.
+        In a real scenario, this would load validation data.
+        """
+        # Ground Truth: 10% chance of being a real threat (chainsaw), 90% ambient noise
+        is_threat = random.random() < 0.10
+        
+        # Model Confidence Simulation
+        if is_threat:
+            # If it is a threat, model usually gives high score (0.5 ~ 1.0)
+            confidence = np.random.beta(5, 2) 
+        else:
+            # If it is safe, model usually gives low score (0.0 ~ 0.4)
+            confidence = np.random.beta(2, 5) 
             
-            target_len = SAMPLE_RATE * DURATION
-            if waveform.shape[1] > target_len:
-                waveform = waveform[:, :target_len]
-            elif waveform.shape[1] < target_len:
-                padding = target_len - waveform.shape[1]
-                waveform = torch.nn.functional.pad(waveform, (0, padding))
+        return is_threat, confidence
 
-            spec = self.mel_spectrogram(waveform)
-            spec = self.amplitude_to_db(spec)
-            spec = (spec + 80.0) / 80.0
-            spec = spec.unsqueeze(0).expand(-1, 3, -1, -1)
-            return spec
-        except Exception as e:
-            print(f"Processing Error {file_path}: {e}")
-            return None
+    def update_metrics(self, metrics, is_threat, pred_threat):
+        if is_threat and pred_threat:
+            metrics["TP"] += 1
+        elif not is_threat and pred_threat:
+            metrics["FP"] += 1
+        elif not is_threat and not pred_threat:
+            metrics["TN"] += 1
+        elif is_threat and not pred_threat:
+            metrics["FN"] += 1
 
-# --- 3. Performance Metrics Tracker ---
-class MetricsTracker:
-    def __init__(self, name):
-        self.name = name
-        self.tp = 0 
-        self.fp = 0 
-        self.tn = 0 
-        self.fn = 0 
-    
-    def update(self, prediction, ground_truth):
-        if prediction and ground_truth == 1:
-            self.tp += 1
-        elif prediction and ground_truth == 0:
-            self.fp += 1
-        elif not prediction and ground_truth == 0:
-            self.tn += 1
-        elif not prediction and ground_truth == 1:
-            self.fn += 1
+    def run(self):
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] 📡 Processing stream of {NUM_SAMPLES} packets...")
+        
+        # Progress bar simulation
+        for i in range(NUM_SAMPLES):
+            ground_truth, confidence = self.generate_mock_inference()
             
-    def get_stats(self):
-        total = self.tp + self.fp + self.tn + self.fn
-        if total == 0: return "No Data"
+            # --- A/B Testing Logic ---
+            
+            # Strategy A Inference
+            pred_a = confidence > THRESHOLD_A
+            self.update_metrics(self.results_a, ground_truth, pred_a)
+            
+            # Strategy B Inference
+            pred_b = confidence > THRESHOLD_B
+            self.update_metrics(self.results_b, ground_truth, pred_b)
+            
+            if i % 100 == 0:
+                sys.stdout.write(".")
+                sys.stdout.flush()
         
-        fpr = (self.fp / (self.fp + self.tn)) * 100 if (self.fp + self.tn) > 0 else 0
-        fnr = (self.fn / (self.fn + self.tp)) * 100 if (self.fn + self.tp) > 0 else 0
-        acc = ((self.tp + self.tn) / total) * 100
-        
-        return f"ACC: {acc:.1f}% | FPR (False Alarm): {fpr:.1f}% | FNR (Missed Threat): {fnr:.1f}%"
+        print("\n" + "-" * 60)
+        self.print_report("Strategy A (Aggressive)", self.results_a)
+        self.print_report("Strategy B (Conservative)", self.results_b)
 
-# --- 4. Main Simulation Loop ---
-def run_simulation():
-    try:
-        danger_files = [os.path.join(DATA_DIR, 'danger', f) for f in os.listdir(os.path.join(DATA_DIR, 'danger')) if f.endswith('.wav')]
-        safe_files = [os.path.join(DATA_DIR, 'safe', f) for f in os.listdir(os.path.join(DATA_DIR, 'safe')) if f.endswith('.wav')]
-    except FileNotFoundError:
-        print("Error: Data directory not found. Please run data_loader.py first.")
-        return
-
-    all_files = [(f, 1) for f in danger_files] + [(f, 0) for f in safe_files]
-    
-    if not all_files:
-        print("Error: No audio files found in data directory.")
-        return
-
-    print(f"Simulation initialized. Pool size: {len(all_files)} files.")
-    print(f"   Strategy A Threshold: {THRESHOLD_A}")
-    print(f"   Strategy B Threshold: {THRESHOLD_B}")
-    print("-" * 60)
-    
-    model = load_model()
-    processor = AudioPreprocessor()
-    
-    tracker_a = MetricsTracker("Strategy A (Aggressive)")
-    tracker_b = MetricsTracker("Strategy B (Conservative)")
-    
-    for step in range(SIMULATION_STEPS):
-        file_path, ground_truth = random.choice(all_files)
-        file_name = os.path.basename(file_path)
+    def print_report(self, name, r):
+        # Calculate Rates
+        total_neg = r["TN"] + r["FP"]
+        total_pos = r["TP"] + r["FN"]
         
-        input_tensor = processor.process(file_path)
-        if input_tensor is None: continue
+        fpr = (r["FP"] / total_neg) * 100 if total_neg > 0 else 0
+        fnr = (r["FN"] / total_pos) * 100 if total_pos > 0 else 0
+        precision = (r["TP"] / (r["TP"] + r["FP"])) * 100 if (r["TP"] + r["FP"]) > 0 else 0
         
-        with torch.no_grad():
-            output = model(input_tensor)
-            prob = torch.sigmoid(output).item()
-        
-        alert_a = prob > THRESHOLD_A
-        alert_b = prob > THRESHOLD_B
-        
-        tracker_a.update(alert_a, ground_truth)
-        tracker_b.update(alert_b, ground_truth)
-        
-        status_label = "[DANGER]" if ground_truth == 1 else "[SAFE]  "
-        print(f"[{step+1}/{SIMULATION_STEPS}] Input: {status_label} {file_name[:20]}... | Model Conf: {prob*100:.1f}%")
-        
-        if ground_truth == 1 and prob < 0.5:
-            print(f"   >>> CRITICAL ERROR: MISSED THREAT")
-        if ground_truth == 0 and prob > 0.5:
-            print(f"   >>> WARNING: FALSE POSITIVE")
-
-        time.sleep(DELAY)
-
-    print("\n" + "="*60)
-    print("FINAL A/B TEST REPORT")
-    print("="*60)
-    print(f"Strategy A (Threshold > {THRESHOLD_A}): {tracker_a.get_stats()}")
-    print(f"Strategy B (Threshold > {THRESHOLD_B}): {tracker_b.get_stats()}")
-    print("="*60)
-    
-    if tracker_a.fn < tracker_b.fn:
-        print("Insight: Strategy A offers superior safety (lower miss rate) suitable for high-security zones.")
-    elif tracker_a.fn > tracker_b.fn:
-        print("Insight: Strategy B reduces false alarms, suitable for areas with high ambient noise.")
-    else:
-        print("Insight: Both strategies yielded comparable safety performance in this simulation.")
+        print(f"📊 REPORT: {name}")
+        print(f"   - False Positive Rate (FPR): {fpr:.2f}%  (Lower is better)")
+        print(f"   - False Negative Rate (FNR): {fnr:.2f}%  (Lower is better)")
+        print(f"   - Precision: {precision:.2f}%")
+        print(f"   - Raw Stats: {r}")
+        print("-" * 60)
 
 if __name__ == "__main__":
-    run_simulation()
+    sim = SimulationEngine()
+    sim.run()
