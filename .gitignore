@@ -1,0 +1,21 @@
+# Python internal files
+__pycache__/
+*.py[cod]
+
+# System files
+.DS_Store
+.vscode/
+
+# Datasets and Archives (Too large for Git)
+data/
+*.wav
+*.zip
+ESC-50-master/
+
+# Model Weights (Large binary files, optional to ignore if >100MB)
+# Keeping the final model is fine if it's small (<100MB), otherwise use Git LFS
+# *.pth 
+
+# Environment
+.env
+venv/
