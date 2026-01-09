@@ -187,7 +187,7 @@ python src/train.py
 python src/simulation.py
 ```
 
-5. 部署
+## **5. 部署**
 
 启动交互式指挥中心。这将启动一个本地服务器并在默认浏览器中打开仪表盘。
 ```Bash
